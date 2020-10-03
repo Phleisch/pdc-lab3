@@ -1,11 +1,12 @@
 package skiplistPackage;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 
 
 // Most of the implementation directly from the code of H&S 14.4
 public final class LockFreeSkipList<T> {
-	static final int MAX_LEVEL = 5;
+	static final int MAX_LEVEL = 32;
 	final Node<T> head = new Node<T>(Integer.MIN_VALUE);
 	final Node<T> tail = new Node<T>(Integer.MAX_VALUE);
 
@@ -45,7 +46,7 @@ public final class LockFreeSkipList<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	boolean add(T x) {
+	public boolean add(T x) {
 		int topLevel = randomLevel();
 		int bottomLevel = 0;
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
@@ -80,7 +81,7 @@ public final class LockFreeSkipList<T> {
 		}
 	
 	@SuppressWarnings("unchecked")
-	boolean remove(T x) {
+	public boolean remove(T x) {
 		int bottomLevel = 0;
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
@@ -146,7 +147,7 @@ public final class LockFreeSkipList<T> {
 			}
 		}
 	
-	boolean contains(T x) {
+	public boolean contains(T x) {
 		int bottomLevel = 0;
 		int v = x.hashCode();
 		boolean[] marked = {false};
@@ -169,14 +170,20 @@ public final class LockFreeSkipList<T> {
 		}
 		return (curr.key == v);
 	}
+	
+	public LinkedList<Integer> toList() {
+		LinkedList<Integer> list = new LinkedList<Integer>();
+		Node<T> currNode = head.next[0].getReference();
+		while(currNode != null && currNode.key != Integer.MAX_VALUE) {
+			list.add(currNode.key);
+			currNode = currNode.next[0].getReference();
+		}
+		return list;
+	}
 
 	// Code from https://stackoverflow.com/questions/12067045/random-level-function-in-skip-list
 	private static int randomLevel() {
 	    int lvl = (int)(Math.log(1.-Math.random())/Math.log(0.5));
 	    return Math.min(lvl, MAX_LEVEL);
-	}
-	
-	public static void main(String[] args) {
-		System.out.println("Class functional");
 	}
 }
