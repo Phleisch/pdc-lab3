@@ -66,7 +66,7 @@ public class LogChecker {
 	* @param ll	LinkedList to convert
 	* @return LockFreeSkipList with the elements from the passed LinkedList
 	*/
-	public static int convertLLToSkipList(LinkedList<Integer> ll) {
+	private static int convertLLToSkipList(LinkedList<Integer> ll) {
 		LockFreeSkipList skipList = new LockFreeSkipList(false);
 
 		for (Integer elem : ll) {
