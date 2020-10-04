@@ -2,6 +2,8 @@ package skiplistPackage;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
+import testPackage.Log;
+
 
 // Most of the implementation directly from the code of H&S 14.4
 public final class LockFreeSkipListLog<T> {
@@ -83,7 +85,7 @@ public final class LockFreeSkipListLog<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public boolean remove(T x) {
+	public Log<Integer> remove(T x) {
 		int bottomLevel = 0;
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
@@ -91,9 +93,9 @@ public final class LockFreeSkipListLog<T> {
 		while(true) {
 			StampedBool stampedBool = find(x, preds, succs);  // Linearization point failed.
 			boolean found = stampedBool.success;
-			double linTime = stampedBool.timestamp;
+			long linTime = stampedBool.timestamp;
 			if(!found) {
-				return false;
+				return new Log<Integer>((Integer) x, "remove", false, linTime);
 			} else {
 				Node<T> nodeToRemove = succs[bottomLevel];
 				for(int level = nodeToRemove.topLevel; level >= bottomLevel+1; level--) {
@@ -112,16 +114,18 @@ public final class LockFreeSkipListLog<T> {
 					succ = succs[bottomLevel].next[bottomLevel].get(marked);
 					if(iMarkedIt) {
 						find(x, preds, succs);
-						return true;
+						return new Log<Integer>((Integer) x, "remove", true, linTime);
 					}
-					else if(marked[0]) return false;
+					else if(marked[0]) {
+						return new Log<Integer>((Integer) x, "remove", false, 0);  // Linearization point outside function, omit log.
+					}
 				}
 			}
 		}
 	}
 	
 	 StampedBool find(T x, Node<T>[] preds, Node<T>[] succs) {
-		double linTime = 0;
+		long linTime = 0;
 		
 		int bottomLevel = 0;
 		int key = x.hashCode();
@@ -156,14 +160,16 @@ public final class LockFreeSkipListLog<T> {
 			}
 		}
 	
-	public boolean contains(T x) {
+	public Log<Integer> contains(T x) {
+		long linTime = 0;
+		
 		int bottomLevel = 0;
 		int v = x.hashCode();
 		boolean[] marked = {false};
 		Node<T> pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
 			curr = pred.next[level].getReference();  // Linearization point if last.
-			double linTime = System.nanoTime();
+			linTime = System.nanoTime();
 			while(true) {
 				succ = curr.next[level].get(marked);
 				while(marked[0]) {
@@ -179,7 +185,7 @@ public final class LockFreeSkipListLog<T> {
 				}
 			}
 		}
-		return (curr.key == v);
+		return new Log<Integer>((Integer) x, "contains", (curr.key == v), linTime);
 	}
 	
 	public LinkedList<Integer> toList() {
@@ -200,9 +206,9 @@ public final class LockFreeSkipListLog<T> {
 	
 	private class StampedBool{
 		public boolean success;
-		public double timestamp;
+		public long timestamp;
 		
-		public StampedBool(boolean success, double timestamp) {
+		public StampedBool(boolean success, long timestamp) {
 			this.success = success;
 			this.timestamp = timestamp;
 		}
