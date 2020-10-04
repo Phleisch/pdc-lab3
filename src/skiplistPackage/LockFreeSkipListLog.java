@@ -47,7 +47,7 @@ public final class LockFreeSkipListLog<T> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public boolean add(T x) {		
+	public Log<Integer> add(T x) {		
 		int topLevel = randomLevel();
 		int bottomLevel = 0;
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
@@ -55,9 +55,9 @@ public final class LockFreeSkipListLog<T> {
 		while (true) {
 			StampedBool stampedBool = find(x, preds, succs);  // Linearization point failed.
 			boolean found = stampedBool.success;
-			double linTime = stampedBool.timestamp;
+			long linTime = stampedBool.timestamp;
 			if (found) {
-				return false;
+				return new Log<Integer>((Integer) x, "add", false, linTime);
 			} else {
 				Node<T> newNode = new Node<T>(x, topLevel);
 				for (int level = bottomLevel; level <= topLevel; level++) {
@@ -79,7 +79,7 @@ public final class LockFreeSkipListLog<T> {
 						find(x, preds, succs);
 					}
 				}
-				return true;
+				return new Log<Integer>((Integer) x, "add", true, linTime);
 			}
 		}
 	}

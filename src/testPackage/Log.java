@@ -6,8 +6,8 @@ public class Log<T> {
 	public boolean successful;
 	public long timestamp;
 
-	public Log (T data, String operation, boolean successful, long timestamp) {
-		this.data = data;
+	public Log (T x, String operation, boolean successful, long timestamp) {
+		this.data = x;
 		this.operation = operation;
 		this.successful = successful;
 		this.timestamp = timestamp;
