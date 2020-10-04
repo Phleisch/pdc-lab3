@@ -8,12 +8,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import skiplistPackage.LockFreeSkipList;
+import skiplistPackage.LockFreeSkipListGlobalLog;
 
 public class SkipListTestGlobalLog {
 	
-	public static final int N = (int) 1e7;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e4;  // TODO: switch to 1e6
+	public static final int N = (int) 1e4;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
@@ -28,7 +28,7 @@ public class SkipListTestGlobalLog {
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
-		LockFreeSkipList<Integer> skipListNormal = new LockFreeSkipList<Integer>();
+		LockFreeSkipListGlobalLog<Integer> skipListNormal = new LockFreeSkipListGlobalLog<Integer>();
 		SkipListPopulator.populate(skipListNormal, N, "normal");
 		
 		// Check normal distribution skip list mean and variance.
@@ -40,7 +40,7 @@ public class SkipListTestGlobalLog {
 	    System.out.println("Normal mean and variance are: " + mean + " : " + std + "\n");
 	    
 		// Create uniform distribution skip list.
-		LockFreeSkipList<Integer> skipListUniform = new LockFreeSkipList<Integer>();
+		LockFreeSkipListGlobalLog<Integer> skipListUniform = new LockFreeSkipListGlobalLog<Integer>();
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
 		
 		// Check uniform distribution skip list mean and variance.
@@ -59,7 +59,7 @@ public class SkipListTestGlobalLog {
 	}
 		
 		
-	private static void completeTest(LockFreeSkipList<Integer> skipListUniform, LockFreeSkipList<Integer> skipListNormal) {
+	private static void completeTest(LockFreeSkipListGlobalLog<Integer> skipListUniform, LockFreeSkipListGlobalLog<Integer> skipListNormal) {
 		double[] fracAddRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracRemoveRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracContainsRange = {0.8, 0.0, 0.5, 0.9};
@@ -77,7 +77,7 @@ public class SkipListTestGlobalLog {
 	}
 	
 	
-	private static void testNormalOps(LockFreeSkipList<Integer> skipList) {
+	private static void testNormalOps(LockFreeSkipListGlobalLog<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
@@ -105,7 +105,7 @@ public class SkipListTestGlobalLog {
 	}
 	
 	
-	private static void testUniformOps(LockFreeSkipList<Integer> skipList) {
+	private static void testUniformOps(LockFreeSkipListGlobalLog<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
@@ -136,9 +136,9 @@ public class SkipListTestGlobalLog {
 	static class NormalOpsTask implements Callable<Void>{
 		private int nOps;
 		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipList<Integer> skipList;
+		private LockFreeSkipListGlobalLog<Integer> skipList;
 		
-		public NormalOpsTask(LockFreeSkipList<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
+		public NormalOpsTask(LockFreeSkipListGlobalLog<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
 			this.nOps = nOps;
 			this.addInterval = fracAdd;
 			this.removeInterval = fracAdd + fracRemove;
@@ -169,9 +169,9 @@ public class SkipListTestGlobalLog {
 	static class UniformOpsTask implements Callable<Void>{
 		private int nOps;
 		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipList<Integer> skipList;
+		private LockFreeSkipListGlobalLog<Integer> skipList;
 		
-		public UniformOpsTask(LockFreeSkipList<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
+		public UniformOpsTask(LockFreeSkipListGlobalLog<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
 			this.nOps = nOps;
 			this.addInterval = fracAdd;
 			this.removeInterval = fracAdd + fracRemove;
