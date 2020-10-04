@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import skiplistPackage.LockFreeSkipList;
+import skiplistPackage.LockFreeSkipListLog;
 
 public class SkipListPopulator {
 	public static final int INT_MIN = 0;
@@ -42,28 +43,80 @@ public class SkipListPopulator {
 		return skipList;
 	}
 	
+	public static LockFreeSkipListLog<Integer> populate(LockFreeSkipListLog<Integer> skipList, int n, String mode) {
+		ExecutorService exec = Executors.newFixedThreadPool(24);
+        List<Callable<Void>> tasks = new ArrayList<>();
+		if(mode.equals("uniform") || mode.equals("normal")) {
+			for (int i = 0; i < 24; i++) {
+				PopulateTask task = new PopulateTask(skipList, (int) n/24, mode);
+	        	tasks.add(task);
+	        }
+			try {
+				exec.invokeAll(tasks);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}else {
+			System.out.println("INVALID MODE SELECTED IN SkipListPopulator.populate!");
+		}
+        exec.shutdown();
+        try {
+			exec.awaitTermination(3, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return skipList;
+	}
+	
 	static class PopulateTask implements Callable<Void>{
 		private int nOps;
 		private boolean mode;
+		private String listMode;
 		private LockFreeSkipList<Integer> skipList;
+		private LockFreeSkipListLog<Integer> skipListLog;
 		
 		public PopulateTask(LockFreeSkipList<Integer> skipList, int nOps, String mode) {
 			this.nOps = nOps;
 			this.mode = mode.equals("uniform");
 			this.skipList = skipList;
+			listMode = "LockFreeSkipList";
+		}
+		
+		public PopulateTask(LockFreeSkipListLog<Integer> skipList, int nOps, String mode) {
+			this.nOps = nOps;
+			this.mode = mode.equals("uniform");
+			this.skipListLog = skipList;
+			listMode = "LockFreeSkipListLog";
 		}
 				
 		public Void call() {
-			if(mode) {  // Uniform add mode.
-				for(int i = 0; i < nOps; i++) {
-					skipList.add(r.nextInt(INT_MAX));
+			if(listMode.equals("LockFreeSkipList")) {
+				if(mode) {  // Uniform add mode.
+					for(int i = 0; i < nOps; i++) {
+						skipList.add(r.nextInt(INT_MAX));
+					}
+				}else {
+					for(int i = 0; i < nOps; ) {  // Intentionally don't increment the for loop.
+						int next = (int) (r.nextGaussian()*INT_STD + INT_MEAN);
+						if(INT_MIN <= next && next <= INT_MAX) {
+							skipList.add(next);
+							i++;
+						}
+					}
 				}
-			}else {
-				for(int i = 0; i < nOps; ) {  // Intentionally don't increment the for loop.
-					int next = (int) (r.nextGaussian()*INT_STD + INT_MEAN);
-					if(INT_MIN <= next && next <= INT_MAX) {
-						skipList.add(next);
-						i++;
+			}
+			else {
+				if(mode) {  // Uniform add mode.
+					for(int i = 0; i < nOps; i++) {
+						skipListLog.add(r.nextInt(INT_MAX));
+					}
+				}else {
+					for(int i = 0; i < nOps; ) {  // Intentionally don't increment the for loop.
+						int next = (int) (r.nextGaussian()*INT_STD + INT_MEAN);
+						if(INT_MIN <= next && next <= INT_MAX) {
+							skipListLog.add(next);
+							i++;
+						}
 					}
 				}
 			}
