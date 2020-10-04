@@ -7,56 +7,59 @@ import testPackage.Log;
 
 
 // Most of the implementation directly from the code of H&S 14.4
-public final class LockFreeSkipList<Integer> {
+public final class LockFreeSkipList {
 	static final int MAX_LEVEL = 32;
-	final Node<Integer> head = new Node<Integer>(Integer.MIN_VALUE);
-	final Node<Integer> tail = new Node<Integer>(Integer.MAX_VALUE);
-	final ReentrantLock linearizationLock = new ReentrantLock();
+	final Node head;
+	final Node tail;
+	final ReentrantLock linearizationLock;
 	private boolean useLinearizationLock;
 
 	public LockFreeSkipList(boolean useLinearizationLock) {
+		head = new Node(Integer.MIN_VALUE);
+		tail = new Node(Integer.MAX_VALUE);
+		linearizationLock = new ReentrantLock();
+		this.useLinearizationLock = useLinearizationLock;
 		for (int i = 0; i < head.next.length; i++) {
-			head.next[i] = new AtomicMarkableReference<LockFreeSkipList.Node<Integer>>(tail, false);
+			head.next[i] = new AtomicMarkableReference<LockFreeSkipList.Node>(tail, false);
 		}
 
 		this.useLinearizationLock = useLinearizationLock;
 	}
 
-	public static final class Node<Integer> {
-		final T value;
+	public static final class Node {
+		final Integer value;
 		final int key;
-		final AtomicMarkableReference<Node<Integer>>[] next;
+		final AtomicMarkableReference<Node>[] next;
 		private int topLevel;
 
 		@SuppressWarnings("unchecked")
 		public Node(int key) {
 			value = null;
 			this.key = key;
-			next = (AtomicMarkableReference<Node<Integer>>[]) new AtomicMarkableReference[MAX_LEVEL + 1];
+			next = (AtomicMarkableReference<Node>[]) new AtomicMarkableReference[MAX_LEVEL + 1];
 			for (int i = 0; i < next.length; i++) {
-				next[i] = new AtomicMarkableReference<Node<Integer>>(null, false);
+				next[i] = new AtomicMarkableReference<Node>(null, false);
 			}
 			topLevel = MAX_LEVEL;
 		}
 
 		@SuppressWarnings("unchecked")
-		public Node(T x, int height) {
+		public Node(Integer x, int height) {
 			value = x;
 			key = x.hashCode();
-			next = (AtomicMarkableReference<Node<Integer>>[]) new AtomicMarkableReference[height + 1];
+			next = (AtomicMarkableReference<Node>[]) new AtomicMarkableReference[height + 1];
 			for (int i = 0; i < next.length; i++) {
-				next[i] = new AtomicMarkableReference<Node<Integer>>(null, false);
+				next[i] = new AtomicMarkableReference<Node>(null, false);
 			}
 			topLevel = height;
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	public Log<Integer> add(T x) {		
+	public Log add(Integer x) {		
 		int topLevel = randomLevel();
 		int bottomLevel = 0;
-		Node<Integer>[] preds = (Node<Integer>[]) new Node[MAX_LEVEL + 1];
-		Node<Integer>[] succs = (Node<Integer>[]) new Node[MAX_LEVEL + 1];
+		Node[] preds = (Node[]) new Node[MAX_LEVEL + 1];
+		Node[] succs = (Node[]) new Node[MAX_LEVEL + 1];
 		while (true) {
 			
 
@@ -64,15 +67,15 @@ public final class LockFreeSkipList<Integer> {
 			boolean found = stampedBool.success;
 			long linTime = stampedBool.timestamp;
 			if (found) {
-				return new Log<Integer>((Integer) x, "add", false, linTime);
+				return new Log(x, "add", false, linTime);
 			} else {
-				Node<Integer> newNode = new Node<Integer>(x, topLevel);
+				Node newNode = new Node(x, topLevel);
 				for (int level = bottomLevel; level <= topLevel; level++) {
-					Node<Integer> succ = succs[level];
+					Node succ = succs[level];
 					newNode.next[level].set(succ, false);
 				}
-				Node<Integer> pred = preds[bottomLevel];
-				Node<Integer> succ = succs[bottomLevel];
+				Node pred = preds[bottomLevel];
+				Node succ = succs[bottomLevel];
 				
 				if (useLinearizationLock)
 					linearizationLock.lock();
@@ -94,25 +97,24 @@ public final class LockFreeSkipList<Integer> {
 						find(x, preds, succs);
 					}
 				}
-				return new Log<Integer>((Integer) x, "add", true, linTime);
+				return new Log(x, "add", true, linTime);
 			}
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	public Log<Integer> remove(T x) {
+	public Log remove(Integer x) {
 		int bottomLevel = 0;
-		Node<Integer>[] preds = (Node<Integer>[]) new Node[MAX_LEVEL + 1];
-		Node<Integer>[] succs = (Node<Integer>[]) new Node[MAX_LEVEL + 1];
-		Node<Integer> succ;
+		Node[] preds = (Node[]) new Node[MAX_LEVEL + 1];
+		Node[] succs = (Node[]) new Node[MAX_LEVEL + 1];
+		Node succ;
 		while(true) {
 			StampedBool stampedBool = find(x, preds, succs);  // Linearization point failed.
 			boolean found = stampedBool.success;
 			long linTime = stampedBool.timestamp;
 			if(!found) {
-				return new Log<Integer>((Integer) x, "remove", false, linTime);
+				return new Log(x, "remove", false, linTime);
 			} else {
-				Node<Integer> nodeToRemove = succs[bottomLevel];
+				Node nodeToRemove = succs[bottomLevel];
 				for(int level = nodeToRemove.topLevel; level >= bottomLevel+1; level--) {
 					boolean[] marked = {false};
 					succ = nodeToRemove.next[level].get(marked);
@@ -135,24 +137,24 @@ public final class LockFreeSkipList<Integer> {
 					succ = succs[bottomLevel].next[bottomLevel].get(marked);
 					if(iMarkedIt) {
 						find(x, preds, succs);
-						return new Log<Integer>((Integer) x, "remove", true, linTime);
+						return new Log(x, "remove", true, linTime);
 					}
 					else if(marked[0]) {
-						return new Log<Integer>((Integer) x, "remove", false, 0);  // Linearization point outside function, omit log.
+						return new Log(x, "remove", false, 0);  // Linearization point outside function, omit log.
 					}
 				}
 			}
 		}
 	}
 	
-	 StampedBool find(T x, Node<Integer>[] preds, Node<Integer>[] succs) {
+	 StampedBool find(Integer x, Node[] preds, Node[] succs) {
 		long linTime = 0;
 		
 		int bottomLevel = 0;
 		int key = x.hashCode();
 		boolean[] marked = {false};
 		boolean snip;
-		Node<Integer> pred = null, curr = null, succ = null;
+		Node pred = null, curr = null, succ = null;
 		retry:
 			while (true) {
 				pred = head;
@@ -192,13 +194,13 @@ public final class LockFreeSkipList<Integer> {
 			}
 		}
 	
-	public Log<Integer> contains(T x) {
+	public Log contains(Integer x) {
 		long linTime = 0;
 		
 		int bottomLevel = 0;
 		int v = x.hashCode();
 		boolean[] marked = {false};
-		Node<Integer> pred = head, curr = null, succ = null;
+		Node pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
 			
 			if (useLinearizationLock)
@@ -228,12 +230,12 @@ public final class LockFreeSkipList<Integer> {
 				}
 			}
 		}
-		return new Log<Integer>((Integer) x, "contains", (curr.key == v), linTime);
+		return new Log(x, "contains", (curr.key == v), linTime);
 	}
 	
 	public LinkedList<Integer> toList() {
 		LinkedList<Integer> list = new LinkedList<Integer>();
-		Node<Integer> currNode = head.next[0].getReference();
+		Node currNode = head.next[0].getReference();
 		while(currNode != null && currNode.key != Integer.MAX_VALUE) {
 			list.add(currNode.key);
 			currNode = currNode.next[0].getReference();

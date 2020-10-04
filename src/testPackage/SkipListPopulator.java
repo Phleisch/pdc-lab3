@@ -17,7 +17,7 @@ public class SkipListPopulator {
 	public static final int INT_STD = (int) 5e6 / 3;
 	private static Random r =	new Random();
 	
-	public static LockFreeSkipList<Integer> populate(LockFreeSkipList<Integer> skipList, int n, String mode) {
+	public static LockFreeSkipList populate(LockFreeSkipList skipList, int n, String mode) {
 		ExecutorService exec = Executors.newFixedThreadPool(24);
         List<Callable<Void>> tasks = new ArrayList<>();
 		if(mode.equals("uniform") || mode.equals("normal")) {
@@ -46,9 +46,9 @@ public class SkipListPopulator {
 	static class PopulateTask implements Callable<Void>{
 		private int nOps;
 		private boolean mode;
-		private LockFreeSkipList<Integer> skipList;
+		private LockFreeSkipList skipList;
 		
-		public PopulateTask(LockFreeSkipList<Integer> skipList, int nOps, String mode) {
+		public PopulateTask(LockFreeSkipList skipList, int nOps, String mode) {
 			this.nOps = nOps;
 			this.mode = mode.equals("uniform");
 			this.skipList = skipList;
