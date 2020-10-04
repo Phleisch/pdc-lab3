@@ -12,8 +12,8 @@ import skiplistPackage.LockFreeSkipListLog;
 
 public class SkipListTestLocalLog {
 	
-	public static final int N = (int) 1e5;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e3;  // TODO: switch to 1e6
+	public static final int N = (int) 1e4;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
