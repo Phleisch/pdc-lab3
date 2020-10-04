@@ -4,14 +4,14 @@ import java.util.concurrent.atomic.AtomicMarkableReference;
 
 
 // Most of the implementation directly from the code of H&S 14.4
-public final class LockFreeSkipList<T> {
+public final class LockFreeSkipListConsumerLog<T> {
 	static final int MAX_LEVEL = 32;
 	final Node<T> head = new Node<T>(Integer.MIN_VALUE);
 	final Node<T> tail = new Node<T>(Integer.MAX_VALUE);
 
-	public LockFreeSkipList() {
+	public LockFreeSkipListConsumerLog() {
 		for (int i = 0; i < head.next.length; i++) {
-			head.next[i] = new AtomicMarkableReference<LockFreeSkipList.Node<T>>(tail, false);
+			head.next[i] = new AtomicMarkableReference<LockFreeSkipListConsumerLog.Node<T>>(tail, false);
 		}
 	}
 

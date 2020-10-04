@@ -13,7 +13,7 @@ import skiplistPackage.LockFreeSkipList;
 public class SkipListTest {
 	
 	public static final int N = (int) 1e7;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e5;  // TODO: switch to 1e6
+	public static final int nOps = (int) 1e4;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
