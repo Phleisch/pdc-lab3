@@ -1,3 +1,11 @@
+package testPackage;
+
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
+
+import skiplistPackage.LockFreeSkipList;
+
 public class LogChecker {
 	
 	/**
@@ -16,17 +24,17 @@ public class LogChecker {
 	* @return			the number of erroneous operations in operationLogs
 	*/
 	public static int checkLogs(LinkedList<Integer> startList,
-								TreeMap<long, Log> opLogs) {
+								TreeMap<Long, Log> opLogs) {
 		
 		int erroneousOps = 0;
 		LockFreeSkipList skipList = convertLLToSkipList(startList);
 
-		for(Map.Entry<long, Log> mapEntry : opLogs.entrySet()) {
+		for(Map.Entry<Long, Log> mapEntry : opLogs.entrySet()) {
 			Log opLog = mapEntry.getValue();
-			erronousOps += isOperationValid(opLog, skipList) ? 1 : 0;
+			erroneousOps += isOperationValid(opLog, skipList) ? 1 : 0;  // TODO: Shouldn't this be the other way around?
 		}
 
-		return erronousOps;
+		return erroneousOps;
 	}
 
 	/**
@@ -53,7 +61,7 @@ public class LogChecker {
 			result = list.add(opLog.data);
 		} else if (opLog.operation.equals("remove")) {
 			result = list.remove(opLog.data);
-		} else if (opLog.operation.equals("contains")) {
+		} else{
 			result = list.contains(opLog.data);
 		}
 
@@ -66,7 +74,7 @@ public class LogChecker {
 	* @param ll	LinkedList to convert
 	* @return LockFreeSkipList with the elements from the passed LinkedList
 	*/
-	private static int convertLLToSkipList(LinkedList<Integer> ll) {
+	private static LockFreeSkipList convertLLToSkipList(LinkedList<Integer> ll) {
 		LockFreeSkipList skipList = new LockFreeSkipList(false);
 
 		for (Integer elem : ll) {
