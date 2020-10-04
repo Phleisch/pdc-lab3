@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import skiplistPackage.LockFreeSkipListLog;
+import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTestLocalLog {
 	
@@ -28,7 +28,7 @@ public class SkipListTestLocalLog {
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
-		LockFreeSkipListLog<Integer> skipListNormal = new LockFreeSkipListLog<Integer>();
+		LockFreeSkipList<Integer> skipListNormal = new LockFreeSkipList<Integer>(false);
 		SkipListPopulator.populate(skipListNormal, N, "normal");
 		
 		// Check normal distribution skip list mean and variance.
@@ -40,7 +40,7 @@ public class SkipListTestLocalLog {
 	    System.out.println("Normal mean and variance are: " + mean + " : " + std + "\n");
 	    
 		// Create uniform distribution skip list.
-		LockFreeSkipListLog<Integer> skipListUniform = new LockFreeSkipListLog<Integer>();
+		LockFreeSkipList<Integer> skipListUniform = new LockFreeSkipList<Integer>(false);
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
 		
 		// Check uniform distribution skip list mean and variance.
@@ -59,7 +59,7 @@ public class SkipListTestLocalLog {
 	}
 		
 		
-	private static void completeTest(LockFreeSkipListLog<Integer> skipListUniform, LockFreeSkipListLog<Integer> skipListNormal) {
+	private static void completeTest(LockFreeSkipList<Integer> skipListUniform, LockFreeSkipList<Integer> skipListNormal) {
 		double[] fracAddRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracRemoveRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracContainsRange = {0.8, 0.0, 0.5, 0.9};
@@ -77,7 +77,7 @@ public class SkipListTestLocalLog {
 	}
 	
 	
-	private static void testNormalOps(LockFreeSkipListLog<Integer> skipList) {
+	private static void testNormalOps(LockFreeSkipList<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
@@ -105,7 +105,7 @@ public class SkipListTestLocalLog {
 	}
 	
 	
-	private static void testUniformOps(LockFreeSkipListLog<Integer> skipList) {
+	private static void testUniformOps(LockFreeSkipList<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
@@ -136,9 +136,9 @@ public class SkipListTestLocalLog {
 	static class NormalOpsTask implements Callable<Void>{
 		private int nOps;
 		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipListLog<Integer> skipList;
+		private LockFreeSkipList<Integer> skipList;
 		
-		public NormalOpsTask(LockFreeSkipListLog<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
+		public NormalOpsTask(LockFreeSkipList<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
 			this.nOps = nOps;
 			this.addInterval = fracAdd;
 			this.removeInterval = fracAdd + fracRemove;
@@ -169,9 +169,9 @@ public class SkipListTestLocalLog {
 	static class UniformOpsTask implements Callable<Void>{
 		private int nOps;
 		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipListLog<Integer> skipList;
+		private LockFreeSkipList<Integer> skipList;
 		
-		public UniformOpsTask(LockFreeSkipListLog<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
+		public UniformOpsTask(LockFreeSkipList<Integer> skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
 			this.nOps = nOps;
 			this.addInterval = fracAdd;
 			this.removeInterval = fracAdd + fracRemove;

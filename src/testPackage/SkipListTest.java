@@ -28,7 +28,7 @@ public class SkipListTest {
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
-		LockFreeSkipList<Integer> skipListNormal = new LockFreeSkipList<Integer>();
+		LockFreeSkipList<Integer> skipListNormal = new LockFreeSkipList<Integer>(false);
 		SkipListPopulator.populate(skipListNormal, N, "normal");
 		
 		// Check normal distribution skip list mean and variance.
@@ -40,7 +40,7 @@ public class SkipListTest {
 	    System.out.println("Normal mean and variance are: " + mean + " : " + std + "\n");
 	    
 		// Create uniform distribution skip list.
-		LockFreeSkipList<Integer> skipListUniform = new LockFreeSkipList<Integer>();
+		LockFreeSkipList<Integer> skipListUniform = new LockFreeSkipList<Integer>(false);
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
 		
 		// Check uniform distribution skip list mean and variance.
