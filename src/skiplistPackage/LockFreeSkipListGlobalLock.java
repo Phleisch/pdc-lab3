@@ -10,11 +10,14 @@ public final class LockFreeSkipListGlobalLog<T> {
 	final Node<T> head = new Node<T>(Integer.MIN_VALUE);
 	final Node<T> tail = new Node<T>(Integer.MAX_VALUE);
 	final ReentrantLock linearizationLock = new ReentrantLock();
+	private static boolean useLinearizationLock;
 
-	public LockFreeSkipListGlobalLog() {
+	public LockFreeSkipListGlobalLog(boolean useLinearizationLock) {
 		for (int i = 0; i < head.next.length; i++) {
 			head.next[i] = new AtomicMarkableReference<LockFreeSkipListGlobalLog.Node<T>>(tail, false);
 		}
+
+		this.useLinearizationLock = useLinearizationLock;
 	}
 
 	public static final class Node<T> {
@@ -69,13 +72,16 @@ public final class LockFreeSkipListGlobalLog<T> {
 				Node<T> pred = preds[bottomLevel];
 				Node<T> succ = succs[bottomLevel];
 				
-				linearizationLock.lock();
+				if (useLinearizationLock)
+					linearizationLock.lock();
 				if(!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {  // Linearization point success.
-					linearizationLock.unlock();
+					if (useLinearizationLock)
+						linearizationLock.unlock();
 					continue;
 				}
 				linTime = System.nanoTime();
-				linearizationLock.unlock();
+				if (useLinearizationLock)
+					linearizationLock.unlock();
 
 				for(int level = bottomLevel+1; level <= topLevel; level++) {
 					while(true) {
@@ -116,11 +122,13 @@ public final class LockFreeSkipListGlobalLog<T> {
 				boolean[] marked = {false};
 				succ = nodeToRemove.next[bottomLevel].get(marked);
 				while(true) {
-
-					linearizationLock.lock();
+					
+					if (useLinearizationLock)
+						linearizationLock.lock();
 					boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ, false, true);  // Linearization point success.
 					linTime = System.nanoTime();
-					linearizationLock.unlock();
+					if (useLinearizationLock)
+						linearizationLock.unlock();
 
 					succ = succs[bottomLevel].next[bottomLevel].get(marked);
 					if(iMarkedIt) {
@@ -147,20 +155,25 @@ public final class LockFreeSkipListGlobalLog<T> {
 			while (true) {
 				pred = head;
 				for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
-					linearizationLock.lock();
+					if (useLinearizationLock)
+						linearizationLock.lock();
 					curr = pred.next[level].getReference();  // Linearization point if last.
 					linTime = System.nanoTime();
-					linearizationLock.unlock();
+					if (useLinearizationLock)
+						linearizationLock.unlock();
 					while (true) {
 						succ = curr.next[level].get(marked);
 						while(marked[0]) {
 							snip = pred.next[level].compareAndSet(curr, succ, false, false);
 							if(!snip) continue retry;
-
-							linearizationLock.lock();
+							
+							if (useLinearizationLock)
+								linearizationLock.lock();
 							curr = pred.next[level].getReference();  // Linearization point if last.
 							linTime = System.nanoTime();
-							linearization.unlock();
+							
+							if (useLinearizationLock)
+								linearization.unlock();
 
 							succ = curr.next[level].get(marked);
 						}
@@ -186,18 +199,22 @@ public final class LockFreeSkipListGlobalLog<T> {
 		Node<T> pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
 			
-			linearizationLock.lock();
+			if (useLinearizationLock)
+				linearizationLock.lock();
 			curr = pred.next[level].getReference();  // Linearization point if last.
 			linTime = System.nanoTime();
-			linearizationLock.unlock();
+			if (useLinearizationLock)
+				linearizationLock.unlock();
 			while(true) {
 				succ = curr.next[level].get(marked);
 				while(marked[0]) {
-
-					linearizationLock.lock();
+					
+					if (useLinearizationLock)
+						linearizationLock.lock();
 					curr = pred.next[level].getReference();  // Linearization point if last.
 					linTime = System.nanoTime();
-					linearizationLock.unlock();
+					if (useLinearizationLock)
+						linearizationLock.unlock();
 
 					succ = curr.next[level].get(marked);
 				}
