@@ -3,7 +3,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 
-
 // Most of the implementation directly from the code of H&S 14.4
 public final class LockFreeSkipList<T> {
 	static final int MAX_LEVEL = 32;
@@ -52,18 +51,18 @@ public final class LockFreeSkipList<T> {
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		while (true) {
-			boolean found = find(x, preds, succs);
+			boolean found = find(x, preds, succs);  // Linearization point failed.
 				if (found) {
 					return false;
 				} else {
-					Node<T> newNode = new Node<T>(x, topLevel);  // Could be wrong about the second <T> here!
+					Node<T> newNode = new Node<T>(x, topLevel);
 					for (int level = bottomLevel; level <= topLevel; level++) {
 						Node<T> succ = succs[level];
 						newNode.next[level].set(succ, false);
 					}
 					Node<T> pred = preds[bottomLevel];
 					Node<T> succ = succs[bottomLevel];
-					if(!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {
+					if(!pred.next[bottomLevel].compareAndSet(succ, newNode, false, false)) {  // Linearization point success.
 						continue;
 					}
 					for(int level = bottomLevel+1; level <= topLevel; level++) {
@@ -82,12 +81,15 @@ public final class LockFreeSkipList<T> {
 	
 	@SuppressWarnings("unchecked")
 	public boolean remove(T x) {
+		double linTime;
+		double linTimeTmp;
+		
 		int bottomLevel = 0;
 		Node<T>[] preds = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		Node<T>[] succs = (Node<T>[]) new Node[MAX_LEVEL + 1];
 		Node<T> succ;
 		while(true) {
-			boolean found = find(x, preds, succs);
+			boolean found = find(x, preds, succs);  // Linearization point failed.
 			if(!found) {
 				return false;
 			} else {
@@ -103,10 +105,12 @@ public final class LockFreeSkipList<T> {
 				boolean[] marked = {false};
 				succ = nodeToRemove.next[bottomLevel].get(marked);
 				while(true) {
-					boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ, false, true);
+					boolean iMarkedIt = nodeToRemove.next[bottomLevel].compareAndSet(succ, succ, false, true);  // Linearization point success.
+					linTimeTmp = System.nanoTime();
 					succ = succs[bottomLevel].next[bottomLevel].get(marked);
 					if(iMarkedIt) {
 						find(x, preds, succs);
+						linTime = linTimeTmp;
 						return true;
 					}
 					else if(marked[0]) return false;
@@ -115,7 +119,9 @@ public final class LockFreeSkipList<T> {
 		}
 	}
 	
-	boolean find(T x, Node<T>[] preds, Node<T>[] succs) {
+	 StampedBool find(T x, Node<T>[] preds, Node<T>[] succs) {
+		double linTime = 0;
+		
 		int bottomLevel = 0;
 		int key = x.hashCode();
 		boolean[] marked = {false};
@@ -125,13 +131,15 @@ public final class LockFreeSkipList<T> {
 			while (true) {
 				pred = head;
 				for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
-					curr = pred.next[level].getReference();
+					curr = pred.next[level].getReference();  // Linearization point if last.
+					linTime = System.nanoTime();
 					while (true) {
 						succ = curr.next[level].get(marked);
 						while(marked[0]) {
 							snip = pred.next[level].compareAndSet(curr, succ, false, false);
 							if(!snip) continue retry;
-							curr = pred.next[level].getReference();
+							curr = pred.next[level].getReference();  // Linearization point if last.
+							linTime = System.nanoTime();
 							succ = curr.next[level].get(marked);
 						}
 						if(curr.key < key){
@@ -143,21 +151,25 @@ public final class LockFreeSkipList<T> {
 					preds[level] = pred;
 					succs[level] = curr;
 				}
-				return (curr.key == key);
+				return new StampedBool(curr.key == key, linTime);
 			}
 		}
 	
 	public boolean contains(T x) {
+		double linTime;
+		
 		int bottomLevel = 0;
 		int v = x.hashCode();
 		boolean[] marked = {false};
 		Node<T> pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
-			curr = pred.next[level].getReference();
+			curr = pred.next[level].getReference();  // Linearization point if last.
+			linTime = System.nanoTime();
 			while(true) {
 				succ = curr.next[level].get(marked);
 				while(marked[0]) {
-					curr = pred.next[level].getReference();  // Is pred correct here? Seems like it should be curr.
+					curr = pred.next[level].getReference();  // Linearization point if last.
+					linTime = System.nanoTime();
 					succ = curr.next[level].get(marked);
 				}
 				if(curr.key < v){
@@ -185,5 +197,15 @@ public final class LockFreeSkipList<T> {
 	private static int randomLevel() {
 	    int lvl = (int)(Math.log(1.-Math.random())/Math.log(0.5));
 	    return Math.min(lvl, MAX_LEVEL);
+	}
+	
+	private class StampedBool{
+		public boolean success;
+		public double timestamp;
+		
+		public StampedBool(boolean success, double timestamp) {
+			this.success = success;
+			this.timestamp = timestamp;
+		}
 	}
 }

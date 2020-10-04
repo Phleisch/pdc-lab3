@@ -12,8 +12,8 @@ import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTest {
 	
-	public static final int N = (int) 1e3;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
+	public static final int N = (int) 1e7;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e5;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
@@ -53,13 +53,13 @@ public class SkipListTest {
 	    	    
 	    // Mixed operation test.
 	    System.out.println("Starting mixed operations on the list.\n");
-	    completeTest();
+	    completeTest(skipListUniform, skipListNormal);
 	    
         System.out.println("Finished testing.");
 	}
 		
 		
-	private static void completeTest() {
+	private static void completeTest(LockFreeSkipList<Integer> skipListUniform, LockFreeSkipList<Integer> skipListNormal) {
 		double[] fracAddRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracRemoveRange = {0.1, 0.5, 0.25, 0.05};
 		double[] fracContainsRange = {0.8, 0.0, 0.5, 0.9};
@@ -70,19 +70,17 @@ public class SkipListTest {
 			fracContains = fracContainsRange[i];
 			for(int j = 0; j < threadRange.length; j++) {
 				nThreads = threadRange[j];
-			    testNormalOps();
-			    testUniformOps();
+			    testNormalOps(skipListNormal);
+			    testUniformOps(skipListUniform);
 			}
 		}
 	}
 	
 	
-	private static void testNormalOps() {
+	private static void testNormalOps(LockFreeSkipList<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
-			LockFreeSkipList<Integer> skipList = new LockFreeSkipList<Integer>();
-			SkipListPopulator.populate(skipList, N, "normal");
 			List<Callable<Void>> tasks = new ArrayList<>();
 			for (int j = 0; j < nThreads; j++) {
 	        	NormalOpsTask task = new NormalOpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains);
@@ -107,12 +105,10 @@ public class SkipListTest {
 	}
 	
 	
-	private static void testUniformOps() {
+	private static void testUniformOps(LockFreeSkipList<Integer> skipList) {
 		exec = Executors.newFixedThreadPool(nThreads);
         double totalTime = 0;
 		for(int i = 0; i < 10; i++) {
-			LockFreeSkipList<Integer> skipList = new LockFreeSkipList<Integer>();
-			SkipListPopulator.populate(skipList, N, "uniform");
 			List<Callable<Void>> tasks = new ArrayList<>();
 			for (int j = 0; j < nThreads; j++) {
 				UniformOpsTask task = new UniformOpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains);
