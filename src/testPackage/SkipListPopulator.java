@@ -20,7 +20,6 @@ public class SkipListPopulator {
 	public static LockFreeSkipList<Integer> populate(LockFreeSkipList<Integer> skipList, int n, String mode) {
 		ExecutorService exec = Executors.newFixedThreadPool(24);
         List<Callable<Void>> tasks = new ArrayList<>();
-		System.out.println("Starting to populate list.");
 		if(mode.equals("uniform") || mode.equals("normal")) {
 			for (int i = 0; i < 24; i++) {
 				PopulateTask task = new PopulateTask(skipList, (int) n/24, mode);
@@ -31,7 +30,6 @@ public class SkipListPopulator {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Finished populating list.");
 		}else {
 			System.out.println("INVALID MODE SELECTED IN SkipListPopulator.populate!");
 		}
