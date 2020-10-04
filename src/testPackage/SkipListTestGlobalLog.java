@@ -54,7 +54,6 @@ public class SkipListTestGlobalLog {
 	    // Mixed operation test.
 	    System.out.println("Starting mixed operations on the list.\n");
 	    completeTest(skipListUniform, skipListNormal);
-	    
         System.out.println("Finished testing.");
 	}
 		
