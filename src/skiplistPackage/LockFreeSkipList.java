@@ -153,11 +153,11 @@ public final class LockFreeSkipList<T> {
 		boolean[] marked = {false};
 		Node<T> pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
-			curr = curr.next[level].getReference();
+			curr = pred.next[level].getReference();
 			while(true) {
 				succ = curr.next[level].get(marked);
 				while(marked[0]) {
-					curr = pred.next[level].getReference();
+					curr = pred.next[level].getReference();  // Is pred correct here? Seems like it should be curr.
 					succ = curr.next[level].get(marked);
 				}
 				if(curr.key < v){
