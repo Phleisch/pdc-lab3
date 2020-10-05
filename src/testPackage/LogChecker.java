@@ -1,10 +1,12 @@
 package testPackage;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-
-import skiplistPackage.LockFreeSkipList;
 
 public class LogChecker {
 	
@@ -27,13 +29,21 @@ public class LogChecker {
 								TreeMap<Long, Log> opLogs) {
 		
 		int erroneousOps = 0;
-		LockFreeSkipList skipList = convertLLToSkipList(startList);
-
-		for(Map.Entry<Long, Log> mapEntry : opLogs.entrySet()) {
-			Log opLog = mapEntry.getValue();
-			erroneousOps += isOperationValid(opLog, skipList) ? 1 : 0;  // TODO: Shouldn't this be the other way around?
+		int totalOps = 0;
+		Set<Integer> testSet = new HashSet<>(startList);
+		List<Log> list = new ArrayList<Log>(opLogs.values());
+		System.out.println(list.size());
+		
+		System.out.println(opLogs.size());
+		long t1 = System.nanoTime();
+		for(Log opLog : list) {
+			//erroneousOps += isOperationValid(opLog, testSet) ? 0 : 1;
+			totalOps += 1;
+			System.out.println(opLog);
+			// System.out.println(totalOps);
 		}
-
+		long t2 = System.nanoTime();
+		System.out.println("check time was: " + (t2-t1)/1e9);
 		return erroneousOps;
 	}
 
@@ -44,44 +54,25 @@ public class LogChecker {
 	* given operation log does not match the actual operation, then the
 	* operation is not valid.
 	*
-	* @param opLog	Log of an operation
-	* @param list	LockFree list on which the operation represented by opLog
-	*				will be performed
+	* @param opLog	 Log of an operation
+	* @param testSet Current set of values on which the operation represented by opLog
+	*				 will be performed
 	* @return whether the operation represented by opLog is valid
 	*/
-	private static boolean isOperationValid(Log opLog, LockFreeSkipList list) {
-		
-		Log result;
+	private static boolean isOperationValid(Log opLog, Set<Integer> testSet) {
+		boolean result;
 
 		// In this case, the linearization point happened in a different thread
 		// so want to ignore the log
 		if (opLog.timestamp == 0) {
 			return true;
 		} else if (opLog.operation.equals("add")) {
-			result = list.add(opLog.data);
+			result = testSet.add(opLog.data);
 		} else if (opLog.operation.equals("remove")) {
-			result = list.remove(opLog.data);
+			result = testSet.remove(opLog.data);
 		} else{
-			result = list.contains(opLog.data);
+			result = testSet.contains(opLog.data);
 		}
-
-		return result.successful == opLog.successful;
+		return result == opLog.successful;
 	}
-
-	/**
-	* Convert a Linked List into a LockFreeSkipList.
-	*
-	* @param ll	LinkedList to convert
-	* @return LockFreeSkipList with the elements from the passed LinkedList
-	*/
-	private static LockFreeSkipList convertLLToSkipList(LinkedList<Integer> ll) {
-		LockFreeSkipList skipList = new LockFreeSkipList(false);
-
-		for (Integer elem : ll) {
-			skipList.add(elem);
-		}
-
-		return skipList;
-	}
-
 }

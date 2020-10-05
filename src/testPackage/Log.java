@@ -12,4 +12,10 @@ public class Log {
 		this.successful = successful;
 		this.timestamp = timestamp;
 	}
+	
+	  @Override
+	  public String toString() {
+	    return timestamp + "|" + data + "|" + operation + "|" + successful;
+	  }
+
 }
