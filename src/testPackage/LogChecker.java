@@ -29,18 +29,12 @@ public class LogChecker {
 								TreeMap<Long, Log> opLogs) {
 		
 		int erroneousOps = 0;
-		int totalOps = 0;
 		Set<Integer> testSet = new HashSet<>(startList);
-		
 		List<Log> list = new ArrayList<Log>(opLogs.values());
-		long t1 = System.nanoTime();
+
 		for(Log opLog : list) {
-			//erroneousOps += isOperationValid(opLog, testSet) ? 0 : 1;
-			totalOps += 1;
-			// System.out.println(totalOps);
+			erroneousOps += isOperationValid(opLog, testSet) ? 0 : 1;
 		}
-		long t2 = System.nanoTime();
-		System.out.println("check time was: " + (t2-t1)/1e9);
 		return erroneousOps;
 	}
 
