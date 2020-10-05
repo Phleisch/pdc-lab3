@@ -29,12 +29,10 @@ public class SkipListTestLocalLog {
 		// Create normal distribution skip list.
 		LockFreeSkipList skipListNormal = new LockFreeSkipList(false);
 		SkipListPopulator.populate(skipListNormal, N, "normal");
-		LinkedList<Integer> listNormal = skipListNormal.toList();
 	    
 		// Create uniform distribution skip list.
 		LockFreeSkipList skipListUniform = new LockFreeSkipList(false);
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
-		LinkedList<Integer> listUniform = skipListUniform.toList();
 	    	    
 	    // Mixed operation test.
 	    System.out.println("Starting mixed operations on the list.\n");
