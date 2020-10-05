@@ -1,5 +1,6 @@
 package testPackage;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -11,7 +12,7 @@ import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTestConsumerLog {
 	
-	public static final int N = (int) 1e4;  // TODO: switch to 1e7
+	public static final int N = (int) 1e5;  // TODO: switch to 1e7
 	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
@@ -20,9 +21,9 @@ public class SkipListTestConsumerLog {
 	private static ExecutorService exec;
 	
 	public static final int INT_MIN = 0;
-	public static final int INT_MAX = (int) 1e7;
-	public static final int INT_MEAN = (int) 5e6;
-	public static final int INT_STD = (int) 5e6 / 3;
+	public static final int INT_MAX = (int) 1e7;  // 1e7
+	public static final int INT_MEAN = (int) 5e6;  // 5e6
+	public static final int INT_STD = (int) 5e6 / 3;  // 5e6 / 3
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
@@ -42,25 +43,39 @@ public class SkipListTestConsumerLog {
 		
 		
 	private static void completeTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
-		testOps(skipListUniform, "uniform", null, false, 1);
-		testOps(skipListNormal, "normal", null, false, 1);
+		LinkedList<Integer> uniformList = skipListUniform.toList();
+		LinkedList<Integer> normalList = skipListNormal.toList();
+		List<TreeMap<Long, Log>> logListUniform = testOps(skipListUniform, "uniform", 1);
+		List<TreeMap<Long, Log>> logListNormal = testOps(skipListNormal, "normal", 1);
+		TreeMap<Long, Log> completeUniformLog = new TreeMap<Long, Log>();
+		TreeMap<Long, Log> completeNormalLog = new TreeMap<Long, Log>();
+		for(TreeMap<Long, Log> log : logListUniform) {
+			completeUniformLog.putAll(log);
+		}
+		for(TreeMap<Long, Log> log : logListNormal) {
+			completeNormalLog.putAll(log);
+		}
+		int errCnt;
+		errCnt = LogChecker.checkLogs(uniformList, completeUniformLog);
+		System.out.println("Local log uniform error count: " + errCnt);
+		errCnt = LogChecker.checkLogs(normalList, completeNormalLog);
+		System.out.println("Local log normal error count: " + errCnt);
 	}
 	
-	private static void testOps(LockFreeSkipList skipList, String mode, TreeMap<Long, Log> log, boolean doLog, int nTests) {
+	private static List<TreeMap<Long, Log>> testOps(LockFreeSkipList skipList, String mode, int nTests) {
 		exec = Executors.newFixedThreadPool(nThreads);
-        double totalTime = 0;
+		List<TreeMap<Long, Log>> logList = new ArrayList<>();
 		for(int i = 0; i < nTests; i++) {
 			List<Callable<Void>> tasks = new ArrayList<>();
 			for (int j = 0; j < nThreads; j++) {
+				TreeMap<Long, Log> log = new TreeMap<Long, Log>();
+				logList.add(log);
 				OpsTask task = new OpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains, 
-						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, log, doLog);
+						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, log, true);
 	        	tasks.add(task);
 	        }
 			try {
-				double t1 = System.nanoTime();
 				exec.invokeAll(tasks);
-				double t2 = System.nanoTime();
-				totalTime += (t2 - t1);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -71,6 +86,6 @@ public class SkipListTestConsumerLog {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        System.out.println(mode + "|add " + fracAdd + "|remove " + fracRemove + "|contains " + fracContains + "|threads " + nThreads + "|avTime " + totalTime/1e9*nTests + "s");
+        return logList;
 	}
 }

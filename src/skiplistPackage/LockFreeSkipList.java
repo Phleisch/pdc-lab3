@@ -202,7 +202,6 @@ public final class LockFreeSkipList {
 		boolean[] marked = {false};
 		Node pred = head, curr = null, succ = null;
 		for(int level = MAX_LEVEL; level >= bottomLevel; level--) {
-			
 			if (useLinearizationLock)
 				linearizationLock.lock();
 			curr = pred.next[level].getReference();  // Linearization point if last.
@@ -212,10 +211,10 @@ public final class LockFreeSkipList {
 			while(true) {
 				succ = curr.next[level].get(marked);
 				while(marked[0]) {
-					
+
 					if (useLinearizationLock)
 						linearizationLock.lock();
-					curr = pred.next[level].getReference();  // Linearization point if last.
+					curr = curr.next[level].getReference();  // Linearization point if last.
 					linTime = System.nanoTime();
 					if (useLinearizationLock)
 						linearizationLock.unlock();
