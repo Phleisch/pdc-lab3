@@ -31,15 +31,12 @@ public class LogChecker {
 		int erroneousOps = 0;
 		int totalOps = 0;
 		Set<Integer> testSet = new HashSet<>(startList);
-		List<Log> list = new ArrayList<Log>(opLogs.values());
-		System.out.println(list.size());
 		
-		System.out.println(opLogs.size());
+		List<Log> list = new ArrayList<Log>(opLogs.values());
 		long t1 = System.nanoTime();
 		for(Log opLog : list) {
 			//erroneousOps += isOperationValid(opLog, testSet) ? 0 : 1;
 			totalOps += 1;
-			System.out.println(opLog);
 			// System.out.println(totalOps);
 		}
 		long t2 = System.nanoTime();
