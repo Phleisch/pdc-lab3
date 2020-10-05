@@ -1,9 +1,7 @@
 package testPackage;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -27,12 +25,10 @@ public class LogChecker {
 	*/
 	public static int checkLogs(LinkedList<Integer> startList,
 								TreeMap<Long, Log> opLogs) {
-		
 		int erroneousOps = 0;
 		Set<Integer> testSet = new HashSet<>(startList);
-		List<Log> list = new ArrayList<Log>(opLogs.values());
-
-		for(Log opLog : list) {
+		for(Map.Entry<Long, Log> log : opLogs.entrySet()) {
+			Log opLog = log.getValue();
 			erroneousOps += isOperationValid(opLog, testSet) ? 0 : 1;
 		}
 		return erroneousOps;
