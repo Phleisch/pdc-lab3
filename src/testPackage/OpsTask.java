@@ -1,7 +1,6 @@
 package testPackage;
 
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
 import skiplistPackage.LockFreeSkipList;
@@ -10,7 +9,7 @@ public class OpsTask implements Callable<Void>{
 	private int nOps;
 	private double addInterval, removeInterval, containsInterval;
 	private LockFreeSkipList skipList;
-	private TreeMap<Long, Log> log;
+	private LogWrapper log;
 	boolean doLog;
 	private static Random r =	new Random();
 	private int INT_MIN;
@@ -20,7 +19,7 @@ public class OpsTask implements Callable<Void>{
 	private boolean mode;
 	
 	public OpsTask(LockFreeSkipList skipList, int nOps, double fracAdd, double fracRemove, double fracContains, 
-			int INT_MIN, int INT_MAX, int INT_MEAN, int INT_STD, String mode, TreeMap<Long, Log> log, boolean doLog) {
+			int INT_MIN, int INT_MAX, int INT_MEAN, int INT_STD, String mode, LogWrapper log, boolean doLog) {
 		this.nOps = nOps;
 		this.addInterval = fracAdd;
 		this.removeInterval = fracAdd + fracRemove;
@@ -58,7 +57,7 @@ public class OpsTask implements Callable<Void>{
 				tmpLog = skipList.contains(next);
 			}
 			if(doLog)
-				log.put(tmpLog.timestamp, tmpLog);
+				log.put(tmpLog);
 		}
 		return null;
 	}

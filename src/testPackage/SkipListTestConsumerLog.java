@@ -4,26 +4,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 
 import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTestConsumerLog {
 	
-	public static final int N = (int) 1e5;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
+	public static final int N = (int) 1e7;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e6;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
-	public static int nThreads = 2;
+	public static int nThreads = 48;
 	private static ExecutorService exec;
 	
-	public static final int INT_MIN = 0;
-	public static final int INT_MAX = (int) 1e7;  // 1e7
-	public static final int INT_MEAN = (int) 5e6;  // 5e6
-	public static final int INT_STD = (int) 5e6 / 3;  // 5e6 / 3
+	public static int INT_MIN = 0;
+	public static int INT_MAX = (int) 1e7;  // 1e7
+	public static int INT_MEAN = (int) 5e6;  // 5e6
+	public static int INT_STD = (int) 5e6 / 3;  // 5e6 / 3
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
@@ -35,47 +37,49 @@ public class SkipListTestConsumerLog {
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
 	    	    
 	    // Mixed operation test.
-	    System.out.println("Starting mixed operations on the list.\n");
-	    completeTest(skipListUniform, skipListNormal);
-	    
+	    System.out.println("\nStarting consistency test.\n");
+	    consistencyTest(skipListUniform, skipListNormal);
+	    INT_MAX = (int) 1e6; INT_MEAN = (int) 5e5; INT_STD = (int) 5e5 / 3;
+	    consistencyTest(skipListUniform, skipListNormal);
+	    INT_MAX = (int) 1e5; INT_MEAN = (int) 5e4; INT_STD = (int) 5e4 / 3;
+	    consistencyTest(skipListUniform, skipListNormal);
+
         System.out.println("Finished testing.");
 	}
 		
 		
-	private static void completeTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
+	private static void consistencyTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
 		LinkedList<Integer> uniformList = skipListUniform.toList();
 		LinkedList<Integer> normalList = skipListNormal.toList();
-		List<TreeMap<Long, Log>> logListUniform = testOps(skipListUniform, "uniform", 1);
-		List<TreeMap<Long, Log>> logListNormal = testOps(skipListNormal, "normal", 1);
-		TreeMap<Long, Log> completeUniformLog = new TreeMap<Long, Log>();
-		TreeMap<Long, Log> completeNormalLog = new TreeMap<Long, Log>();
-		for(TreeMap<Long, Log> log : logListUniform) {
-			completeUniformLog.putAll(log);
-		}
-		for(TreeMap<Long, Log> log : logListNormal) {
-			completeNormalLog.putAll(log);
-		}
+		TreeMap<Long, Log> completeUniformLog = testOps(skipListUniform, "uniform", 1);
+		TreeMap<Long, Log> completeNormalLog = testOps(skipListNormal, "normal", 1);
 		int errCnt;
 		errCnt = LogChecker.checkLogs(uniformList, completeUniformLog);
-		System.out.println("Local log uniform error count: " + errCnt);
+		System.out.println("Concurrent log uniform error count: " + errCnt);
 		errCnt = LogChecker.checkLogs(normalList, completeNormalLog);
-		System.out.println("Local log normal error count: " + errCnt);
+		System.out.println("Concurrent log normal error count: " + errCnt);
 	}
 	
-	private static List<TreeMap<Long, Log>> testOps(LockFreeSkipList skipList, String mode, int nTests) {
-		exec = Executors.newFixedThreadPool(nThreads);
-		List<TreeMap<Long, Log>> logList = new ArrayList<>();
+	private static TreeMap<Long, Log> testOps(LockFreeSkipList skipList, String mode, int nTests) {
+		exec = Executors.newFixedThreadPool(nThreads-1);
+		TreeMap<Long, Log> finalLog = new TreeMap<Long, Log>();
+		ConcurrentLinkedQueue<Log> concurrentLog = new ConcurrentLinkedQueue<Log>();
+		LogWrapper logWrapper = new LogWrapper(concurrentLog);
 		for(int i = 0; i < nTests; i++) {
 			List<Callable<Void>> tasks = new ArrayList<>();
-			for (int j = 0; j < nThreads; j++) {
-				TreeMap<Long, Log> log = new TreeMap<Long, Log>();
-				logList.add(log);
-				OpsTask task = new OpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains, 
-						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, log, true);
+			for (int j = 0; j < nThreads-1; j++) {
+				OpsTask task = new OpsTask(skipList, (int) nOps/(nThreads-1), fracAdd, fracRemove, fracContains, 
+						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, logWrapper, true);
 	        	tasks.add(task);
 	        }
+			
+			LogConsumer logConsumer = new LogConsumer(concurrentLog, finalLog);
+			Thread logConsumerThread = new Thread(logConsumer);
+			logConsumerThread.start();
 			try {
 				exec.invokeAll(tasks);
+				logConsumer.stopFlag = true;
+		        logConsumerThread.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -86,6 +90,27 @@ public class SkipListTestConsumerLog {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        return logList;
+        return finalLog;
 	}
+	
+	public static class LogConsumer implements Runnable {
+		private ConcurrentLinkedQueue<Log> log;
+		TreeMap<Long, Log> finalLog;
+		public volatile boolean stopFlag = false;
+		
+		public LogConsumer(ConcurrentLinkedQueue<Log> log, TreeMap<Long, Log> finalLog) {
+			this.log = log;
+			this.finalLog = finalLog;
+		}
+
+	    public void run() {
+	        while(!stopFlag || log.size() != 0) {
+	        	Log tmpLog = log.poll();
+	        	if(tmpLog == null)
+	        			continue;
+	        	finalLog.put(tmpLog.timestamp, tmpLog);
+	        }
+	    }
+	}
+
 }

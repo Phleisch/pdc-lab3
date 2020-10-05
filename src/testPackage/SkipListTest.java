@@ -2,7 +2,7 @@ package testPackage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,8 +12,8 @@ import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTest {
 	
-	public static final int N = (int) 1e4;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e3;  // TODO: switch to 1e6
+	public static final int N = (int) 1e7;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e6;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
@@ -24,7 +24,6 @@ public class SkipListTest {
 	public static final int INT_MAX = (int) 1e7;
 	public static final int INT_MEAN = (int) 5e6;
 	public static final int INT_STD = (int) 5e6 / 3;
-	private static Random r =	new Random();
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
@@ -70,26 +69,31 @@ public class SkipListTest {
 			fracContains = fracContainsRange[i];
 			for(int j = 0; j < threadRange.length; j++) {
 				nThreads = threadRange[j];
-			    testNormalOps(skipListNormal);
-			    testUniformOps(skipListUniform);
+			    testOps(skipListNormal, "normal", 10);
+			    testOps(skipListUniform, "uniform", 10);
 			}
 		}
 	}
 	
 	
-	private static void testNormalOps(LockFreeSkipList skipList) {
+	private static List<LogWrapper> testOps(LockFreeSkipList skipList, String mode, int nTests) {
 		exec = Executors.newFixedThreadPool(nThreads);
-        double totalTime = 0;
-		for(int i = 0; i < 10; i++) {
+		long totalTime = 0;
+		List<LogWrapper> logList = new ArrayList<>();
+		for(int i = 0; i < nTests; i++) {
 			List<Callable<Void>> tasks = new ArrayList<>();
 			for (int j = 0; j < nThreads; j++) {
-	        	NormalOpsTask task = new NormalOpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains);
+				TreeMap<Long, Log> log = new TreeMap<Long, Log>();
+				LogWrapper logWrapper = new LogWrapper(log);
+				logList.add(logWrapper);
+				OpsTask task = new OpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains, 
+						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, logWrapper, true);
 	        	tasks.add(task);
 	        }
 			try {
-				double t1 = System.nanoTime();
+				long t1 = System.nanoTime();
 				exec.invokeAll(tasks);
-				double t2 = System.nanoTime();
+				long t2 = System.nanoTime();
 				totalTime += (t2 - t1);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -101,98 +105,8 @@ public class SkipListTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        System.out.println("Normal|add " + fracAdd + "|remove " + fracRemove + "|contains " + fracContains + "|threads " + nThreads + "|avTime " + totalTime/1e10 + "s");
-	}
-	
-	
-	private static void testUniformOps(LockFreeSkipList skipList) {
-		exec = Executors.newFixedThreadPool(nThreads);
-        double totalTime = 0;
-		for(int i = 0; i < 10; i++) {
-			List<Callable<Void>> tasks = new ArrayList<>();
-			for (int j = 0; j < nThreads; j++) {
-				UniformOpsTask task = new UniformOpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains);
-	        	tasks.add(task);
-	        }
-			try {
-				double t1 = System.nanoTime();
-				exec.invokeAll(tasks);
-				double t2 = System.nanoTime();
-				totalTime += (t2 - t1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-        exec.shutdown();
-        try {
-			exec.awaitTermination(3, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-        System.out.println("Uniform|add " + fracAdd + "|remove " + fracRemove + "|contains " + fracContains + "|threads " + nThreads + "|avTime " + totalTime/1e10 + "s");
-	}
-
-	
-	static class NormalOpsTask implements Callable<Void>{
-		private int nOps;
-		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipList skipList;
-		
-		public NormalOpsTask(LockFreeSkipList skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
-			this.nOps = nOps;
-			this.addInterval = fracAdd;
-			this.removeInterval = fracAdd + fracRemove;
-			this.containsInterval = fracAdd + fracRemove + fracContains;
-			this.skipList = skipList;
-		}
-				
-		public Void call() {
-			for(int i = 0; i < nOps; i++) {
-				double rnd = Math.random()*containsInterval;
-				int next = (int) (r.nextGaussian()*INT_STD + INT_MEAN);
-				while(INT_MIN <= next && next <= INT_MAX) {
-					next = (int) (r.nextGaussian()*INT_STD + INT_MEAN);
-				}
-				if(rnd < addInterval) {
-					skipList.add(next);
-				}else if(rnd < (removeInterval)) {
-					skipList.remove(next);
-				}else {
-					skipList.contains(next);
-				}
-			}
-			return null;
-		}
-	}
-	
-	
-	static class UniformOpsTask implements Callable<Void>{
-		private int nOps;
-		private double addInterval, removeInterval, containsInterval;
-		private LockFreeSkipList skipList;
-		
-		public UniformOpsTask(LockFreeSkipList skipList, int nOps, double fracAdd, double fracRemove, double fracContains) {
-			this.nOps = nOps;
-			this.addInterval = fracAdd;
-			this.removeInterval = fracAdd + fracRemove;
-			this.containsInterval = fracAdd + fracRemove + fracContains;
-			this.skipList = skipList;
-		}
-				
-		public Void call() {
-			for(int i = 0; i < nOps; i++) {
-				double rnd = Math.random()*containsInterval;
-				int next = r.nextInt(INT_MAX);
-				if(rnd < addInterval) {
-					skipList.add(next);
-				}else if(rnd < (removeInterval)) {
-					skipList.remove(next);
-				}else {
-					skipList.contains(next);
-				}
-			}
-			return null;
-		}
+        System.out.println(mode + "|add " + fracAdd + "|remove " + fracRemove + "|contains " + fracContains + "|threads " + nThreads + "|avTime " + totalTime/(1e9*nTests) + "s");
+        return logList;
 	}
 }
 

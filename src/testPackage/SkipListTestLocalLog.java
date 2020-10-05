@@ -12,18 +12,18 @@ import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTestLocalLog {
 	
-	public static final int N = (int) 1e5;  // TODO: switch to 1e7
-	public static final int nOps = (int) 1e2;  // TODO: switch to 1e6
+	public static final int N = (int) 1e7;  // TODO: switch to 1e7
+	public static final int nOps = (int) 1e6;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
 	public static double fracRemove = 0.1;
 	public static double fracContains = 0.8;
-	public static int nThreads = 2;
+	public static int nThreads = 48;
 	private static ExecutorService exec;
 	
-	public static final int INT_MIN = 0;
-	public static final int INT_MAX = (int) 1e7;  // 1e7
-	public static final int INT_MEAN = (int) 5e6;  // 5e6
-	public static final int INT_STD = (int) 5e6 / 3;  // 5e6 / 3
+	public static int INT_MIN = 0;
+	public static int INT_MAX = (int) 1e7;  // 1e7
+	public static int INT_MEAN = (int) 5e6;  // 5e6
+	public static int INT_STD = (int) 5e6 / 3;  // 5e6 / 3
 
 	public static void main(String[] args) {
 		// Create normal distribution skip list.
@@ -35,25 +35,28 @@ public class SkipListTestLocalLog {
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
 	    	    
 	    // Mixed operation test.
-	    System.out.println("Starting mixed operations on the list.\n");
-	    completeTest(skipListUniform, skipListNormal);
-	    
+	    System.out.println("\nStarting consistency test.\n");
+	    consistencyTest(skipListUniform, skipListNormal);
+	    INT_MAX = (int) 1e6; INT_MEAN = (int) 5e5; INT_STD = (int) 5e5 / 3;
+	    consistencyTest(skipListUniform, skipListNormal);
+	    INT_MAX = (int) 1e5; INT_MEAN = (int) 5e4; INT_STD = (int) 5e4 / 3;
+	    consistencyTest(skipListUniform, skipListNormal);
         System.out.println("Finished testing.");
 	}
 		
 		
-	private static void completeTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
+	private static void consistencyTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
 		LinkedList<Integer> uniformList = skipListUniform.toList();
 		LinkedList<Integer> normalList = skipListNormal.toList();
-		List<TreeMap<Long, Log>> logListUniform = testOps(skipListUniform, "uniform", 1);
-		List<TreeMap<Long, Log>> logListNormal = testOps(skipListNormal, "normal", 1);
+		List<LogWrapper> logListUniform = testOps(skipListUniform, "uniform", 1);
+		List<LogWrapper> logListNormal = testOps(skipListNormal, "normal", 1);
 		TreeMap<Long, Log> completeUniformLog = new TreeMap<Long, Log>();
 		TreeMap<Long, Log> completeNormalLog = new TreeMap<Long, Log>();
-		for(TreeMap<Long, Log> log : logListUniform) {
-			completeUniformLog.putAll(log);
+		for(LogWrapper log : logListUniform) {
+			completeUniformLog.putAll(log.toTreeMap());
 		}
-		for(TreeMap<Long, Log> log : logListNormal) {
-			completeNormalLog.putAll(log);
+		for(LogWrapper log : logListNormal) {
+			completeNormalLog.putAll(log.toTreeMap());
 		}
 		int errCnt;
 		errCnt = LogChecker.checkLogs(uniformList, completeUniformLog);
@@ -62,16 +65,17 @@ public class SkipListTestLocalLog {
 		System.out.println("Local log normal error count: " + errCnt);
 	}
 	
-	private static List<TreeMap<Long, Log>> testOps(LockFreeSkipList skipList, String mode, int nTests) {
+	private static List<LogWrapper> testOps(LockFreeSkipList skipList, String mode, int nTests) {
 		exec = Executors.newFixedThreadPool(nThreads);
-		List<TreeMap<Long, Log>> logList = new ArrayList<>();
+		List<LogWrapper> logList = new ArrayList<>();
 		for(int i = 0; i < nTests; i++) {
 			List<Callable<Void>> tasks = new ArrayList<>();
 			for (int j = 0; j < nThreads; j++) {
 				TreeMap<Long, Log> log = new TreeMap<Long, Log>();
-				logList.add(log);
+				LogWrapper logWrapper = new LogWrapper(log);
+				logList.add(logWrapper);
 				OpsTask task = new OpsTask(skipList, (int) nOps/nThreads, fracAdd, fracRemove, fracContains, 
-						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, log, true);
+						INT_MIN, INT_MAX, INT_MEAN, INT_STD, mode, logWrapper, true);
 	        	tasks.add(task);
 	        }
 			try {
