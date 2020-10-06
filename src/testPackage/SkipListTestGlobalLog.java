@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import skiplistPackage.LockFreeSkipList;
 
 public class SkipListTestGlobalLog {
-	
+
 	public static final int N = (int) 1e7;  // TODO: switch to 1e7
 	public static final int nOps = (int) 1e6;  // TODO: switch to 1e6
 	public static double fracAdd = 0.1;
@@ -19,7 +19,7 @@ public class SkipListTestGlobalLog {
 	public static double fracContains = 0.8;
 	public static int nThreads = 48;
 	private static ExecutorService exec;
-	
+
 	public static final int INT_MIN = 0;
 	public static final int INT_MAX = (int) 1e7;  // 1e7
 	public static final int INT_MEAN = (int) 5e6;  // 5e6
@@ -29,21 +29,21 @@ public class SkipListTestGlobalLog {
 		// Create normal distribution skip list.
 		LockFreeSkipList skipListNormal = new LockFreeSkipList(true);
 		SkipListPopulator.populate(skipListNormal, N, "normal");
-	    
+
 		// Create uniform distribution skip list.
 		LockFreeSkipList skipListUniform = new LockFreeSkipList(true);
 		SkipListPopulator.populate(skipListUniform, N, "uniform");
-	    	    
+
 	    // Mixed operation test.
 	    System.out.println("Starting comparison test.\n");
 	    comparisonTest(skipListUniform, skipListNormal);
-	    
+
 	    System.out.println("\nStarting consistency test.\n");
 	    consistencyTest(skipListUniform, skipListNormal);
-	    
+
         System.out.println("Finished testing.");
 	}
-		
+
 	private static void comparisonTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
 		nThreads = 2; fracAdd = 0.25; fracRemove = 0.25; fracContains = 0.5;
 		testOps(skipListNormal, "normal", 10);
@@ -52,7 +52,7 @@ public class SkipListTestGlobalLog {
 		testOps(skipListNormal, "normal", 10);
 		testOps(skipListUniform, "uniform", 10);
 	}
-		
+
 	private static void consistencyTest(LockFreeSkipList skipListUniform, LockFreeSkipList skipListNormal) {
 		LinkedList<Integer> uniformList = skipListUniform.toList();
 		LinkedList<Integer> normalList = skipListNormal.toList();
@@ -72,7 +72,7 @@ public class SkipListTestGlobalLog {
 		errCnt = LogChecker.checkLogs(normalList, completeNormalLog);
 		System.out.println("Global log normal error count: " + errCnt);
 	}
-	
+
 	private static List<LogWrapper> testOps(LockFreeSkipList skipList, String mode, int nTests) {
 		exec = Executors.newFixedThreadPool(nThreads);
 		long totalTime = 0;

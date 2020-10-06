@@ -97,6 +97,7 @@ public class SkipListTestConsumerLog {
 		private ConcurrentLinkedQueue<Log> log;
 		TreeMap<Long, Log> finalLog;
 		public volatile boolean stopFlag = false;
+		private int size = -1;
 		
 		public LogConsumer(ConcurrentLinkedQueue<Log> log, TreeMap<Long, Log> finalLog) {
 			this.log = log;
@@ -104,11 +105,20 @@ public class SkipListTestConsumerLog {
 		}
 
 	    public void run() {
-	        while(!stopFlag || log.size() != 0) {
+	        while(true) {
+	        	if(size == -1 && stopFlag) {
+	        		size = log.size();
+	        	}
+	        	if(stopFlag && size == 0) {
+	        		break;
+	        	}
 	        	Log tmpLog = log.poll();
 	        	if(tmpLog == null)
 	        			continue;
 	        	finalLog.put(tmpLog.timestamp, tmpLog);
+	        	if(size > 0) {
+	        		size --;
+	        	}
 	        }
 	    }
 	}

@@ -1,0 +1,34 @@
+SkipListTestLocalLog:
+
+### consistency test ###
+Local log uniform error count: 393
+Local log normal error count: 3
+Local log uniform error count: 5325
+Local log normal error count: 28
+Local log uniform error count: 41880
+Local log normal error count: 70
+
+SkipListTestConsumerLog:
+
+### consistency test ###
+Concurrent log uniform error count: 238
+Concurrent log normal error count: 10
+Concurrent log uniform error count: 3238
+Concurrent log normal error count: 42
+Concurrent log uniform error count: 28036
+Concurrent log normal error count: 30
+
+SkipListTestGlobalLog:
+
+### comparison test ###
+normal|add 0.25|remove 0.25|contains 0.5|threads 2|avTime 40.9038150802s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 2|avTime 8.33676947s
+normal|add 0.25|remove 0.25|contains 0.5|threads 46|avTime 41.7199828103s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 46|avTime 10.76613463s
+
+### consistency test ###
+Global log uniform error count: 0
+Global log normal error count: 0
+
+
+SkipListTest:
