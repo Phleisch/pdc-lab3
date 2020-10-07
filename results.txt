@@ -30,5 +30,45 @@ uniform|add 0.25|remove 0.25|contains 0.5|threads 46|avTime 10.76613463s
 Global log uniform error count: 0
 Global log normal error count: 0
 
-
 SkipListTest:
+
+Normal mean and variance are: 5000121.0 : 1931955.6150952969
+Uniform mean and variance are: 4999324.0 : 2886915.555125851
+
+### comparison test ###
+
+normal|add 0.1|remove 0.1|contains 0.8|threads 2|avTime 36.66013506s
+uniform|add 0.1|remove 0.1|contains 0.8|threads 2|avTime 4.12493629s
+normal|add 0.1|remove 0.1|contains 0.8|threads 12|avTime 43.05915301s
+uniform|add 0.1|remove 0.1|contains 0.8|threads 12|avTime 1.53712158s
+normal|add 0.1|remove 0.1|contains 0.8|threads 30|avTime 42.19630462s
+uniform|add 0.1|remove 0.1|contains 0.8|threads 30|avTime 2.70965302s
+normal|add 0.1|remove 0.1|contains 0.8|threads 48|avTime 41.39863761s
+uniform|add 0.1|remove 0.1|contains 0.8|threads 48|avTime 2.70527372s
+
+normal|add 0.5|remove 0.5|contains 0.0|threads 2|avTime 63.7795166999s
+uniform|add 0.5|remove 0.5|contains 0.0|threads 2|avTime 11.0637949296s
+normal|add 0.5|remove 0.5|contains 0.0|threads 12|avTime 50.7014775398s
+uniform|add 0.5|remove 0.5|contains 0.0|threads 12|avTime 11.9330800101s
+normal|add 0.5|remove 0.5|contains 0.0|threads 30|avTime 49.9683681498s
+uniform|add 0.5|remove 0.5|contains 0.0|threads 30|avTime 11.3779673301s
+normal|add 0.5|remove 0.5|contains 0.0|threads 48|avTime 51.6635030701s
+uniform|add 0.5|remove 0.5|contains 0.0|threads 48|avTime 14.4066890502s
+
+normal|add 0.25|remove 0.25|contains 0.5|threads 2|avTime 51.42851966s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 2|avTime 7.37981159s
+normal|add 0.25|remove 0.25|contains 0.5|threads 12|avTime 47.67913259s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 12|avTime 6.01367034s
+normal|add 0.25|remove 0.25|contains 0.5|threads 30|avTime 45.05826935s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 30|avTime 7.05125523s
+normal|add 0.25|remove 0.25|contains 0.5|threads 48|avTime 45.69786464s
+uniform|add 0.25|remove 0.25|contains 0.5|threads 48|avTime 7.62087756s
+
+normal|add 0.05|remove 0.05|contains 0.9|threads 2|avTime 41.08410244s
+uniform|add 0.05|remove 0.05|contains 0.9|threads 2|avTime 4.88563723s
+normal|add 0.05|remove 0.05|contains 0.9|threads 12|avTime 41.42871194s
+uniform|add 0.05|remove 0.05|contains 0.9|threads 12|avTime 3.03248618s
+normal|add 0.05|remove 0.05|contains 0.9|threads 30|avTime 41.72649951s
+uniform|add 0.05|remove 0.05|contains 0.9|threads 30|avTime 2.87826066s
+normal|add 0.05|remove 0.05|contains 0.9|threads 48|avTime 41.9245029s
+uniform|add 0.05|remove 0.05|contains 0.9|threads 48|avTime 2.79132542s
